@@ -9,6 +9,7 @@ import (
 	"html/template"
 	"io"
 	"log"
+	"net/http"
 	"os"
 	"os/exec"
 	"sort"
@@ -914,6 +915,11 @@ func main() {
 	}, adminLoginRequired)
 
 	e.Start(":8080")
+
+	// pprof
+	go func() {
+		log.Println(http.ListenAndServe("localhost:6060", nil))
+	}()
 }
 
 type Report struct {
