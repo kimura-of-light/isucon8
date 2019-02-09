@@ -1,15 +1,12 @@
 all: build
 
-.PHONY: deps2 clean
+.PHONY: deps clean
 clean:
 	rm -rf torb
 
 deps:
-	gb vendor restore
-
-deps2:
-	export GOPATH=`pwd` dep ensure
+	dep ensure
 
 .PHONY: build
 build:
-	GOPATH=`pwd`:`pwd`/vendor go build -v torb
+	go build -o torb app.go
