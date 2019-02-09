@@ -8,7 +8,7 @@ deps:
 	gb vendor restore
 
 deps2:
-	dep ensure
+	GOPATH=`pwd` dep ensure
 
 .PHONY: build
 build:
