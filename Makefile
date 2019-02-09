@@ -5,7 +5,7 @@ clean:
 	rm -rf torb
 
 deps:
-	dep ensure
+	export GOPATH=/go; dep ensure
 
 .PHONY: build
 build:
