@@ -1,4 +1,4 @@
-package isucon8
+package src
 
 import (
 	"bytes"
