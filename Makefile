@@ -8,5 +8,5 @@ deps:
 	export GOPATH=/go; dep ensure
 
 .PHONY: build
-build:
+build: clean deps
 	go build -o torb app.go
