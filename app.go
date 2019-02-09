@@ -225,9 +225,28 @@ func getEvents(all bool) ([]*Event, error) {
 
 func getEvent(eventID, loginUserID int64) (*Event, error) {
 	var event Event
-	if err := db.QueryRow("SELECT * FROM events WHERE id = ?", eventID).Scan(&event.ID, &event.Title, &event.PublicFg, &event.ClosedFg, &event.Price); err != nil {
+	if err := db.QueryRow("SELECT * FROM events WHERE id = ?", eventID).
+		Scan(&event.ID, &event.Title, &event.PublicFg, &event.ClosedFg, &event.Price); err != nil {
 		return nil, err
 	}
+
+	// Reservationsの取得
+	rowsReservations, err := db.Query("SELECT id, sheet_id, reserved_at FROM reservations WHERE event_id = ? AND canceled_at IS NULL", eventID)
+	if err != nil {
+		return nil, err
+	}
+	defer rowsReservations.Close()
+
+	var reservations map[int64]*Reservation
+	for rowsReservations.Next() {
+		var reservation Reservation
+		if err := rowsReservations.Scan(&reservation.ID, &reservation.SheetID, &reservation.ReservedAt); err != nil {
+			return nil, err
+		}
+
+		reservations[reservation.SheetID] = &reservation
+	}
+
 	event.Sheets = map[string]*Sheets{
 		"S": &Sheets{},
 		"A": &Sheets{},
@@ -250,17 +269,13 @@ func getEvent(eventID, loginUserID int64) (*Event, error) {
 		event.Total++
 		event.Sheets[sheet.Rank].Total++
 
-		var reservation Reservation
-		err := db.QueryRow("SELECT * FROM reservations WHERE event_id = ? AND sheet_id = ? AND canceled_at IS NULL GROUP BY event_id, sheet_id HAVING reserved_at = MIN(reserved_at)", event.ID, sheet.ID).Scan(&reservation.ID, &reservation.EventID, &reservation.SheetID, &reservation.UserID, &reservation.ReservedAt, &reservation.CanceledAt)
-		if err == nil {
-			sheet.Mine = reservation.UserID == loginUserID
-			sheet.Reserved = true
-			sheet.ReservedAtUnix = reservation.ReservedAt.Unix()
-		} else if err == sql.ErrNoRows {
+		if reservations[sheet.ID] == nil {
 			event.Remains++
 			event.Sheets[sheet.Rank].Remains++
 		} else {
-			return nil, err
+			sheet.Mine = reservations[sheet.ID].UserID == loginUserID
+			sheet.Reserved = true
+			sheet.ReservedAtUnix = reservations[sheet.ID].ReservedAt.Unix()
 		}
 
 		event.Sheets[sheet.Rank].Detail = append(event.Sheets[sheet.Rank].Detail, &sheet)
