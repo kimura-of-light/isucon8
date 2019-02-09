@@ -25,18 +25,6 @@ import (
 	"github.com/labstack/echo/middleware"
 )
 
-func init() {
-	file, err := os.OpenFile("torb-app.log", os.O_RDWR|os.O_CREATE|os.O_APPEND, 0666)
-	if err != nil {
-		//エラー処理
-		log.Fatal(err)
-	}
-	defer file.Close()
-
-	log.SetOutput(io.MultiWriter(file, os.Stdout))
-	log.SetFlags(log.Ldate | log.Ltime)
-}
-
 type User struct {
 	ID        int64  `json:"id,omitempty"`
 	Nickname  string `json:"nickname,omitempty"`
@@ -198,7 +186,7 @@ func getLoginAdministrator(c echo.Context) (*Administrator, error) {
 	return &administrator, err
 }
 
-func getEvents(all bool) ([]*Event, error) {
+func getEvents(c echo.Context, all bool) ([]*Event, error) {
 	tx, err := db.Begin()
 	if err != nil {
 		return nil, err
@@ -223,7 +211,7 @@ func getEvents(all bool) ([]*Event, error) {
 		events = append(events, &event)
 	}
 	for i, v := range events {
-		event, err := getEvent(v.ID, -1)
+		event, err := getEvent(c, v.ID, -1)
 		if err != nil {
 			return nil, err
 		}
@@ -235,7 +223,7 @@ func getEvents(all bool) ([]*Event, error) {
 	return events, nil
 }
 
-func getEvent(eventID, loginUserID int64) (*Event, error) {
+func getEvent(c echo.Context, eventID, loginUserID int64) (*Event, error) {
 	var event Event
 	if err := db.QueryRow("SELECT * FROM events WHERE id = ?", eventID).
 		Scan(&event.ID, &event.Title, &event.PublicFg, &event.ClosedFg, &event.Price); err != nil {
@@ -250,12 +238,14 @@ func getEvent(eventID, loginUserID int64) (*Event, error) {
 	defer rowsReservations.Close()
 
 	var reservations map[int64]*Reservation
+	c.Logger().Print("reservation")
 	for rowsReservations.Next() {
 		var reservation Reservation
 		if err := rowsReservations.Scan(&reservation.ID, &reservation.SheetID, &reservation.ReservedAt); err != nil {
 			return nil, err
 		}
 
+		c.Logger().Printf("%#v", reservation)
 		reservations[reservation.SheetID] = &reservation
 	}
 
@@ -370,7 +360,8 @@ func main() {
 	e.Use(middleware.LoggerWithConfig(middleware.LoggerConfig{Output: os.Stderr}))
 	e.Static("/", "public")
 	e.GET("/", func(c echo.Context) error {
-		events, err := getEvents(false)
+		c.Logger().Print("aaaaaaa")
+		events, err := getEvents(c, false)
 		if err != nil {
 			return err
 		}
@@ -463,7 +454,7 @@ func main() {
 				return err
 			}
 
-			event, err := getEvent(reservation.EventID, -1)
+			event, err := getEvent(c, reservation.EventID, -1)
 			if err != nil {
 				return err
 			}
@@ -503,7 +494,7 @@ func main() {
 			if err := rows.Scan(&eventID); err != nil {
 				return err
 			}
-			event, err := getEvent(eventID, -1)
+			event, err := getEvent(c, eventID, -1)
 			if err != nil {
 				return err
 			}
@@ -559,7 +550,7 @@ func main() {
 		return c.NoContent(204)
 	}, loginRequired)
 	e.GET("/api/events", func(c echo.Context) error {
-		events, err := getEvents(true)
+		events, err := getEvents(c, true)
 		if err != nil {
 			return err
 		}
@@ -579,7 +570,7 @@ func main() {
 			loginUserID = user.ID
 		}
 
-		event, err := getEvent(eventID, loginUserID)
+		event, err := getEvent(c, eventID, loginUserID)
 		if err != nil {
 			if err == sql.ErrNoRows {
 				return resError(c, "not_found", 404)
@@ -605,7 +596,7 @@ func main() {
 			return err
 		}
 
-		event, err := getEvent(eventID, user.ID)
+		event, err := getEvent(c, eventID, user.ID)
 		if err != nil {
 			if err == sql.ErrNoRows {
 				return resError(c, "invalid_event", 404)
@@ -673,7 +664,7 @@ func main() {
 			return err
 		}
 
-		event, err := getEvent(eventID, user.ID)
+		event, err := getEvent(c, eventID, user.ID)
 		if err != nil {
 			if err == sql.ErrNoRows {
 				return resError(c, "invalid_event", 404)
@@ -729,7 +720,7 @@ func main() {
 		administrator := c.Get("administrator")
 		if administrator != nil {
 			var err error
-			if events, err = getEvents(true); err != nil {
+			if events, err = getEvents(c, true); err != nil {
 				return err
 			}
 		}
@@ -774,7 +765,7 @@ func main() {
 		return c.NoContent(204)
 	}, adminLoginRequired)
 	e.GET("/admin/api/events", func(c echo.Context) error {
-		events, err := getEvents(true)
+		events, err := getEvents(c, true)
 		if err != nil {
 			return err
 		}
@@ -807,7 +798,7 @@ func main() {
 			return err
 		}
 
-		event, err := getEvent(eventID, -1)
+		event, err := getEvent(c, eventID, -1)
 		if err != nil {
 			return err
 		}
@@ -818,7 +809,7 @@ func main() {
 		if err != nil {
 			return resError(c, "not_found", 404)
 		}
-		event, err := getEvent(eventID, -1)
+		event, err := getEvent(c, eventID, -1)
 		if err != nil {
 			if err == sql.ErrNoRows {
 				return resError(c, "not_found", 404)
@@ -842,7 +833,7 @@ func main() {
 			params.Public = false
 		}
 
-		event, err := getEvent(eventID, -1)
+		event, err := getEvent(c, eventID, -1)
 		if err != nil {
 			if err == sql.ErrNoRows {
 				return resError(c, "not_found", 404)
@@ -868,7 +859,7 @@ func main() {
 			return err
 		}
 
-		e, err := getEvent(eventID, -1)
+		e, err := getEvent(c, eventID, -1)
 		if err != nil {
 			return err
 		}
@@ -881,7 +872,7 @@ func main() {
 			return resError(c, "not_found", 404)
 		}
 
-		event, err := getEvent(eventID, -1)
+		event, err := getEvent(c, eventID, -1)
 		if err != nil {
 			return err
 		}
