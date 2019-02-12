@@ -12,7 +12,7 @@ services:
     image: mariadb:10.4
     volumes:
       #- ./docker/db/my.cnf:/etc/db/my.cnf
-      - ./docker/db/init:/docker-entrypoint-initdb.d"
+      - ./docker/db/init:/docker-entrypoint-initdb.d
     ports:
       - 23306:3306
     environment:
