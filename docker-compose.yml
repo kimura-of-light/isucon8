@@ -1,0 +1,10 @@
+version: '3.5'
+services:
+  app:
+    image: golang:1.10.3
+    volumes:
+      - .:/go/src/github.com/kimura-of-light/isucon8
+    working_dir: /go/src/github.com/kimura-of-light/isucon8
+    command: go run app.go
+    ports:
+      - 80:8080
