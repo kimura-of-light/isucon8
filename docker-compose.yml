@@ -5,7 +5,7 @@ services:
     volumes:
       - .:/go/src/github.com/kimura-of-light/isucon8
     working_dir: /go/src/github.com/kimura-of-light/isucon8
-    command: go get -u github.com/golang/dep/cmd/dep && go run app.go
+    command: make run
     ports:
       - 80:8080
   db:

@@ -5,11 +5,14 @@ clean:
 	rm -rf torb
 
 deps:
+	go get -u github.com/golang/dep/cmd/dep
 	export GOPATH=/go; dep ensure
 
-.PHONY: build
+.PHONY: build run
 build: clean deps
 	go build -o torb app.go
+run: deps
+	go run app.go
 
 .PHONY: status start stop restart
 status:
