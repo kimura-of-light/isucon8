@@ -8,6 +8,8 @@ services:
     command: make run
     ports:
       - 80:8080
+    depends_on:
+      - db
   db:
     image: mariadb:10.4
     volumes:
