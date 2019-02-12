@@ -8,3 +8,14 @@ services:
     command: go run app.go
     ports:
       - 80:8080
+  db:
+    image: mariadb:10.4
+    volumes:
+      #- ./docker/db/my.cnf:/etc/db/my.cnf
+      - ./docker/db/init:/docker-entrypoint-initdb.d"
+    ports:
+      - 23306:3306
+    environment:
+      - MYSQL_ALLOW_EMPTY_PASSWORD=yes
+      - MYSQL_DATABASE=torb
+    command: mysqld --character-set-server=utf8mb4 --collation-server=utf8mb4_unicode_ci
