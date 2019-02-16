@@ -19,13 +19,10 @@ services:
   db:
     image: mariadb:10.4
     volumes:
-      #- ./docker/db/my.cnf:/etc/db/my.cnf
       - ./docker/db/init:/docker-entrypoint-initdb.d
-    ports:
-      - 23306:3306
     environment:
       - MYSQL_ALLOW_EMPTY_PASSWORD=yes
       - MYSQL_DATABASE=torb
       - MYSQL_USER=isucon
       - MYSQL_PASSWORD=isucon
-    command: mysqld --character-set-server=utf8mb4 --collation-server=utf8mb4_unicode_ci
+    command: mysqld --character-set-server=utf8 --collation-server=utf8_unicode_ci
