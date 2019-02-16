@@ -1,0 +1,24 @@
+settings:
+  legacy:
+    force: false
+    interval: 0s
+  resources:
+    outputs: outputs.log
+    logs: logs.log
+    errors: errors.log
+schema:
+  - name: isucon8-app
+    path: .
+    commands:
+      run:
+        status: true
+    watcher:
+      paths:
+        - .
+      extensions:
+        - go
+        - tmpl
+      ignored_paths:
+        - .git
+        - .realize
+        - vendor
