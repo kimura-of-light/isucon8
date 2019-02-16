@@ -1,0 +1,29 @@
+version: '3.5'
+services:
+  app:
+    image: golang:1.10.3
+    volumes:
+      - .:/go/src/github.com/kimura-of-light/isucon8
+    working_dir: /go/src/github.com/kimura-of-light/isucon8
+    command: make run
+    ports:
+      - 80:8080
+    environment:
+      - DB_USER=isucon
+      - DB_PASS=isucon
+      - DB_HOST=db
+      - DB_PORT=3306
+      - DB_DATABASE=torb
+    depends_on:
+      - db
+  db:
+    image: mariadb:10.4
+    volumes:
+      - ./docker/db/my.cnf:/etc/mysql/my.cnf
+      - ./docker/db/init:/docker-entrypoint-initdb.d
+    environment:
+      - MYSQL_ALLOW_EMPTY_PASSWORD=yes
+      - MYSQL_DATABASE=torb
+      - MYSQL_USER=isucon
+      - MYSQL_PASSWORD=isucon
+    command: mysqld --character-set-server=utf8 --collation-server=utf8_unicode_ci
