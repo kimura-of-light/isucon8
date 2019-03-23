@@ -10,7 +10,7 @@ deps:
 
 .PHONY: build run
 build: clean deps
-	go build -o torb app.go
+	export GOPATH=/go; go build -o torb app.go
 run:
 	go get -u github.com/oxequa/realize
 	realize start
